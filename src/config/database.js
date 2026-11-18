@@ -10,6 +10,8 @@ export const sequelize = new Sequelize(
         host: process.env.DB_HOST,
         port: process.env.DB_PORT || 3306,
         dialect: 'mysql',
-        logging: console.log, // evita que Sequelize loguee cada query en consola
-    },
-);
+        logging: false, // Desactiva el logging de SQL en consola
+        pool: {
+            max: 5, // Máximo de conexiones en el pool
+        }
+    });

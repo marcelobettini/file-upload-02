@@ -1,8 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
-import { sequelize } from './config/database.js';
+import healthRouter from './routes/health.routes.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
-process.loadEnvFile();
 const port = process.env.PORT || 3000;
 
 export const app = express();
@@ -13,10 +12,7 @@ app.use(express.json()); // parsea JSON
 app.use(express.urlencoded({ extended: true })); // parsea x-www-form-urlencoded
 
 // Público: sirve para saber si el proceso está vivo, sin tocar la base.
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
-});
-
+app.use('/health', healthRouter);
 // Rutas de la API. Se delega la implementación a los routers.
 
 
