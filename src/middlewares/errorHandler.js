@@ -29,6 +29,9 @@ export function errorHandler(err, req, res, next) {
         if (err.code === 'LIMIT_FILE_SIZE') {
             return send(res, 413, 'FILE_TOO_LARGE', 'El archivo supera el tamaño máximo permitido (5 MiB)');
         }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+            return send(res, 400, 'TOO_MANY_FILES', 'Se superó la cantidad máxima de archivos por lote (5)');
+        }
         if (err.code === 'LIMIT_UNEXPECTED_FILE') {
             return send(res, 400, 'UNEXPECTED_FILE_FIELD', `Campo de archivo incorrecto: "${err.field}"`);
         }

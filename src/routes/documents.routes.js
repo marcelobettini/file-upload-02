@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { validate } from '../middlewares/validate.js';
 import { idParamSchema } from '../schemas/common.schema.js';
-import { upload } from '../config/upload.js';
+import { upload, uploadBatch, MAX_BATCH_FILES } from '../config/upload.js';
 import * as ctrl from '../controllers/documents.controller.js';
 
 export const documentsRouter = Router();
@@ -15,6 +15,17 @@ documentsRouter.post(
     ctrl.assertCaseExists,
     upload.single('document'),
     ctrl.uploadDocument,
+);
+
+// Lote: `array('documents', 5)` acepta de 0 a 5 archivos repetidos bajo el MISMO nombre
+// de campo ("documents") y los deja en req.files (un array). El mínimo de 1 se verifica
+// en el controlador, porque Multer no falla cuando no llega ningún archivo.
+documentsRouter.post(
+    '/cases/:id/documents/batch',
+    validate(idParamSchema, 'params'),
+    ctrl.assertCaseExists,
+    uploadBatch.array('documents', MAX_BATCH_FILES),
+    ctrl.uploadDocumentsBatch,
 );
 
 documentsRouter.get('/cases/:id/documents', validate(idParamSchema, 'params'), ctrl.assertCaseExists, ctrl.listDocuments);

@@ -21,7 +21,9 @@ export const ALLOWED_TYPES = {
     'image/png': '.png',
 };
 
-export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MiB
+export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MiB por archivo
+export const MAX_BATCH_FILES = 5; // archivos por lote
+export const MAX_BATCH_SIZE = 20 * 1024 * 1024; // 20 MiB sumando todo el lote
 
 // diskStorage decide DÓNDE y con QUÉ NOMBRE se escribe cada archivo.
 const storage = multer.diskStorage({
@@ -39,8 +41,18 @@ function fileFilter(req, file, cb) {
     cb(new HttpError(400, 'INVALID_FILE_TYPE', 'Tipo de archivo no permitido. Se aceptan PDF, JPG y PNG'));
 }
 
+// Subida individual (etapa 2): se usa con upload.single('document').
 export const upload = multer({
     storage,
     fileFilter,
     limits: { fileSize: MAX_FILE_SIZE },
+});
+
+// Subida múltiple (etapa 3): se usa con uploadBatch.array('documents', MAX_BATCH_FILES).
+// `limits.files` corta la petición apenas llega el archivo número 6 (LIMIT_FILE_COUNT).
+// Multer NO limita el tamaño total del lote: eso lo comprobamos nosotros en el controlador.
+export const uploadBatch = multer({
+    storage,
+    fileFilter,
+    limits: { fileSize: MAX_FILE_SIZE, files: MAX_BATCH_FILES },
 });
