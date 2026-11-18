@@ -1,25 +1,37 @@
 // Manejo centralizado de respuestas de error.
-// El detalle se registra solo en el servidor; al cliente nunca se le envían
-// stacks ni mensajes internos de la base de datos.
+// Formato único para toda la API: { error, message, details }.
+// El detalle técnico se registra solo en el servidor; al cliente nunca se le
+// envían stacks ni mensajes internos de la base de datos.
+import { ZodError } from 'zod';
+import { UniqueConstraintError } from 'sequelize';
+import { HttpError } from '../utils/HttpError.js';
+
+const send = (res, status, error, message, details = null) =>
+    res.status(status).json({ error, message, details });
 
 export function notFound(req, res) {
-    res.status(404).json({ error: 'Ruta no encontrada' });
+    send(res, 404, 'ROUTE_NOT_FOUND', 'Ruta no encontrada');
 }
 
 // Express identifica este middleware por sus cuatro parámetros: no quitarlos.
 export function errorHandler(err, req, res, next) {
+    if (err instanceof HttpError) {
+        return send(res, err.status, err.code, err.message, err.details);
+    }
+    if (err instanceof ZodError) {
+        const details = err.issues.map((i) => ({ field: i.path.join('.'), message: i.message }));
+        return send(res, 400, 'VALIDATION_ERROR', 'Datos inválidos', details);
+    }
+    // Violación de UNIQUE (document_number, case_number): conflicto con el estado actual.
+    if (err instanceof UniqueConstraintError) {
+        const fields = Object.keys(err.fields ?? {});
+        return send(res, 409, 'DUPLICATE_VALUE', 'Ya existe un registro con ese valor', { fields });
+    }
     // body-parser no debe exponer el detalle del parser al cliente.
     if (err.type === 'entity.parse.failed') {
-        return res.status(400).json({ error: 'JSON inválido' });
+        return send(res, 400, 'INVALID_JSON', 'JSON inválido');
     }
 
-    const status = err.status ?? 500;
-
-    if (status >= 500) {
-        console.error(err);
-    }
-
-    res.status(status).json({
-        error: status >= 500 ? 'Error interno del servidor' : err.message,
-    });
+    console.error(err);
+    send(res, 500, 'INTERNAL_ERROR', 'Error interno del servidor');
 }
