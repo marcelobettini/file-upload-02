@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import healthRouter from './routes/health.routes.js';
 import { clientsRouter } from './routes/clients.routes.js';
 import { casesRouter } from './routes/cases.routes.js';
+import { documentsRouter } from './routes/documents.routes.js';
 import { sequelize } from './config/database.js';
 import './models/index.js'; // registra modelos y asociaciones antes de sync()
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
@@ -20,6 +21,7 @@ app.use('/health', healthRouter);
 // Rutas de la API. Se delega la implementación a los routers.
 app.use('/api/clients', clientsRouter);
 app.use('/api/cases', casesRouter);
+app.use('/api', documentsRouter); // /api/cases/:id/documents (y en la etapa 4, /api/documents/:id)
 
 // Orden importante: primero 404, luego el manejador de errores.
 app.use(notFound);
