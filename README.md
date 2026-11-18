@@ -90,29 +90,46 @@ Las tablas se crean con `await sequelize.sync()` al arrancar. Es cómodo para ap
 Nunca confiamos en lo que llega en `req.body`. Cada endpoint declara un esquema:
 
 ```js
-export const createClientSchema = z.object({
+export const createClientSchema = z.strictObject({
     first_name: z.string().trim().min(1).max(100),
     // ...
     email: z.email().max(150).nullish(),
-}).strict();
+});
 
-export const updateClientSchema = z.object(fields).partial().strict()
+export const updateClientSchema = createClientSchema.partial()
     .refine((d) => Object.keys(d).length > 0, { message: 'Debe informarse al menos un campo' });
 ```
 
-- `.strict()` rechaza campos desconocidos: así no se puede intentar editar `id` por `PATCH`.
-- `.partial()` vuelve todo opcional para `PATCH`, y `.refine()` exige al menos un campo.
+- `z.strictObject` rechaza campos desconocidos: así no se puede intentar editar `id` por `PATCH`.
+- `.partial()` vuelve todo opcional para `PATCH` (reutilizamos el esquema de creación), y `.refine()` exige al menos un campo.
 - Los parámetros de ruta (`:id`) llegan como texto; `z.coerce.number()` los convierte y rechaza `abc`.
 
-El middleware `validate(schema, 'body' | 'params')` ejecuta el esquema y deja los datos limpios en `req.valid`. Si fallan, delega el error al manejador central.
+Para aplicar un esquema a una ruta usamos un middleware muy corto, `validate(schema, 'body' | 'params')`:
+
+```js
+export const validate = (schema, source = 'body') => (req, res, next) => {
+    req[source] = schema.parse(req[source]);
+    next();
+};
+```
+
+Hace dos cosas:
+
+1. **Si los datos son válidos, reemplaza `req.body` (o `req.params`) por el resultado de Zod**: sin campos de más, con los textos recortados y con los tipos convertidos. Por eso, en el controlador, `req.params.id` ya es un **número** aunque Express lo entregue como texto. No se inventa ninguna propiedad nueva: los controladores leen `req.body` y `req.params` como siempre.
+2. **Si no son válidos, `schema.parse()` lanza un `ZodError`.** Express lo captura y lo manda al manejador central de errores, que responde `400`. No hace falta `try/catch`.
+
+> `req.body` y `req.params` son propiedades normales de Express y se pueden reasignar. No ocurre lo mismo con `req.query`, que en Express 5 es de solo lectura; no lo usamos en este proyecto.
 
 ### 1.4 Errores con un formato único
 
 Toda respuesta de error de la API tiene la forma de la spec:
 
 ```json
-{ "error": "VALIDATION_ERROR", "message": "Datos inválidos", "details": [ ... ] }
+{ "error": "VALIDATION_ERROR", "message": "Datos inválidos",
+  "details": { "formErrors": [], "fieldErrors": { "first_name": ["Too small: expected string to have >=1 characters"] } } }
 ```
+
+En los errores de validación, `details` sale directo de `z.flattenError(err)`: los mensajes de Zod agrupados por campo. Quedan en inglés a propósito: traducirlos o personalizarlos es una mejora posible, pero no es el tema de este tutorial.
 
 Los controladores lanzan `new HttpError(404, 'CLIENT_NOT_FOUND', '...')` y `errorHandler` lo traduce. Allí también se convierten:
 

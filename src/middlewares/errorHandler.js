@@ -2,7 +2,7 @@
 // Formato único para toda la API: { error, message, details }.
 // El detalle técnico se registra solo en el servidor; al cliente nunca se le
 // envían stacks ni mensajes internos de la base de datos.
-import { ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 import { UniqueConstraintError } from 'sequelize';
 import multer from 'multer';
 import { HttpError } from '../utils/HttpError.js';
@@ -20,8 +20,8 @@ export function errorHandler(err, req, res, next) {
         return send(res, err.status, err.code, err.message, err.details);
     }
     if (err instanceof ZodError) {
-        const details = err.issues.map((i) => ({ field: i.path.join('.'), message: i.message }));
-        return send(res, 400, 'VALIDATION_ERROR', 'Datos inválidos', details);
+        // flattenError agrupa los mensajes de Zod por campo: { formErrors, fieldErrors }.
+        return send(res, 400, 'VALIDATION_ERROR', 'Datos inválidos', z.flattenError(err));
     }
     // Errores propios de Multer: traen un `code` que identifica el límite violado.
     // Multer ya borra los archivos parciales que alcanzó a escribir antes de fallar.

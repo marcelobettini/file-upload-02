@@ -9,10 +9,10 @@ async function findCaseOr404(id) {
 
 export async function createCase(req, res) {
     // El expediente debe pertenecer a un cliente existente.
-    if (!(await Client.findByPk(req.valid.body.client_id))) {
+    if (!(await Client.findByPk(req.body.client_id))) {
         throw new HttpError(404, 'CLIENT_NOT_FOUND', 'El cliente referenciado no existe');
     }
-    const created = await Case.create(req.valid.body);
+    const created = await Case.create(req.body);
     res.status(201).json(created);
 }
 
@@ -21,15 +21,15 @@ export async function listCases(req, res) {
 }
 
 export async function getCase(req, res) {
-    res.json(await findCaseOr404(req.valid.params.id));
+    res.json(await findCaseOr404(req.params.id));
 }
 
 export async function updateCase(req, res) {
-    const found = await findCaseOr404(req.valid.params.id);
+    const found = await findCaseOr404(req.params.id);
     // Solo se verifica el cliente si el PATCH intenta cambiarlo.
-    if (req.valid.body.client_id !== undefined && !(await Client.findByPk(req.valid.body.client_id))) {
+    if (req.body.client_id !== undefined && !(await Client.findByPk(req.body.client_id))) {
         throw new HttpError(404, 'CLIENT_NOT_FOUND', 'El cliente referenciado no existe');
     }
-    await found.update(req.valid.body);
+    await found.update(req.body);
     res.json(found);
 }

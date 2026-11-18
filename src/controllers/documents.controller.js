@@ -8,7 +8,7 @@ import { UPLOADS_DIR, MAX_BATCH_SIZE } from '../config/upload.js';
 // Middleware que corre ANTES de Multer: si el expediente no existe, ni siquiera
 // se procesa el cuerpo de la petición (no se escribe ningún archivo).
 export async function assertCaseExists(req, res, next) {
-    const found = await Case.findByPk(req.valid.params.id);
+    const found = await Case.findByPk(req.params.id);
     if (!found) throw new HttpError(404, 'CASE_NOT_FOUND', 'El expediente no existe');
     next();
 }
@@ -37,7 +37,7 @@ export async function uploadDocument(req, res) {
     }
 
     try {
-        const doc = await Document.create(toRecord(req.valid.params.id, req.file));
+        const doc = await Document.create(toRecord(req.params.id, req.file));
         res.status(201).json(doc);
     } catch (err) {
         // MySQL falló pero el archivo ya existe: lo borramos para no dejar basura.
@@ -65,7 +65,7 @@ export async function uploadDocumentsBatch(req, res) {
         // Una transacción agrupa los INSERT: o se guardan todos o ninguno.
         // Si el callback lanza un error, Sequelize hace ROLLBACK automáticamente.
         const docs = await sequelize.transaction((transaction) =>
-            Document.bulkCreate(files.map((f) => toRecord(req.valid.params.id, f)), { transaction }),
+            Document.bulkCreate(files.map((f) => toRecord(req.params.id, f)), { transaction }),
         );
 
         res.status(201).json(docs);
@@ -78,7 +78,7 @@ export async function uploadDocumentsBatch(req, res) {
 
 export async function listDocuments(req, res) {
     // Solo metadatos: nunca devolvemos los bytes del archivo.
-    res.json(await Document.findAll({ where: { case_id: req.valid.params.id }, order: [['id', 'ASC']] }));
+    res.json(await Document.findAll({ where: { case_id: req.params.id }, order: [['id', 'ASC']] }));
 }
 
 async function findDocumentOr404(id) {
@@ -90,7 +90,7 @@ async function findDocumentOr404(id) {
 // Descarga: MySQL es la única fuente de verdad. El cliente pide un ID, nunca un
 // nombre de archivo, y jamás se le revela la ruta física de uploads/.
 export async function downloadDocument(req, res, next) {
-    const doc = await findDocumentOr404(req.valid.params.id);
+    const doc = await findDocumentOr404(req.params.id);
 
     // res.download(archivo, nombreParaElCliente, opciones, callback)
     //  - `root` fija la carpeta base: `stored_name` se resuelve siempre dentro de uploads/.
@@ -108,7 +108,7 @@ export async function downloadDocument(req, res, next) {
 
 // Eliminación: primero el archivo, después el registro. El orden es deliberado.
 export async function deleteDocument(req, res) {
-    const doc = await findDocumentOr404(req.valid.params.id);
+    const doc = await findDocumentOr404(req.params.id);
 
     // Si unlink falla, el error se propaga y el registro NO se toca: sigue apuntando
     // a un archivo que existe y el usuario puede reintentar.

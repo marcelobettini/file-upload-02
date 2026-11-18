@@ -4,7 +4,7 @@ import { HttpError } from '../utils/HttpError.js';
 // Express 5 captura automáticamente los errores de funciones async:
 // no hace falta try/catch ni next(err) en cada controlador.
 export async function createClient(req, res) {
-    const client = await Client.create(req.valid.body);
+    const client = await Client.create(req.body);
     res.status(201).json(client);
 }
 
@@ -19,11 +19,11 @@ async function findClientOr404(id) {
 }
 
 export async function getClient(req, res) {
-    res.json(await findClientOr404(req.valid.params.id));
+    res.json(await findClientOr404(req.params.id));
 }
 
 export async function updateClient(req, res) {
-    const client = await findClientOr404(req.valid.params.id);
-    await client.update(req.valid.body);
+    const client = await findClientOr404(req.params.id);
+    await client.update(req.body);
     res.json(client);
 }
