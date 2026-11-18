@@ -41,10 +41,15 @@ function fileFilter(req, file, cb) {
     cb(new HttpError(400, 'INVALID_FILE_TYPE', 'Tipo de archivo no permitido. Se aceptan PDF, JPG y PNG'));
 }
 
+// Opciones comunes a las dos instancias de Multer.
+// defParamCharset: por defecto Multer decodifica el nombre del archivo como latin1, pero
+// navegadores, Postman y Bruno lo envían en UTF-8. Sin esta opción, "número.pdf" se
+// guardaría como "nÃºmero.pdf" en original_name.
+const baseOptions = { storage, fileFilter, defParamCharset: 'utf8' };
+
 // Subida individual (etapa 2): se usa con upload.single('document').
 export const upload = multer({
-    storage,
-    fileFilter,
+    ...baseOptions,
     limits: { fileSize: MAX_FILE_SIZE },
 });
 
@@ -52,7 +57,6 @@ export const upload = multer({
 // `limits.files` corta la petición apenas llega el archivo número 6 (LIMIT_FILE_COUNT).
 // Multer NO limita el tamaño total del lote: eso lo comprobamos nosotros en el controlador.
 export const uploadBatch = multer({
-    storage,
-    fileFilter,
+    ...baseOptions,
     limits: { fileSize: MAX_FILE_SIZE, files: MAX_BATCH_FILES },
 });
