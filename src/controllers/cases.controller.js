@@ -1,12 +1,6 @@
 import { Case, Client } from '../models/index.js';
 import { HttpError } from '../utils/HttpError.js';
 
-async function assertClientExists(clientId) {
-    if (!(await Client.findByPk(clientId))) {
-        throw new HttpError(404, 'CLIENT_NOT_FOUND', 'El cliente referenciado no existe');
-    }
-}
-
 async function findCaseOr404(id) {
     const found = await Case.findByPk(id);
     if (!found) throw new HttpError(404, 'CASE_NOT_FOUND', 'El expediente no existe');
@@ -14,7 +8,10 @@ async function findCaseOr404(id) {
 }
 
 export async function createCase(req, res) {
-    await assertClientExists(req.valid.body.client_id);
+    // El expediente debe pertenecer a un cliente existente.
+    if (!(await Client.findByPk(req.valid.body.client_id))) {
+        throw new HttpError(404, 'CLIENT_NOT_FOUND', 'El cliente referenciado no existe');
+    }
     const created = await Case.create(req.valid.body);
     res.status(201).json(created);
 }
@@ -29,8 +26,9 @@ export async function getCase(req, res) {
 
 export async function updateCase(req, res) {
     const found = await findCaseOr404(req.valid.params.id);
-    if (req.valid.body.client_id !== undefined) {
-        await assertClientExists(req.valid.body.client_id);
+    // Solo se verifica el cliente si el PATCH intenta cambiarlo.
+    if (req.valid.body.client_id !== undefined && !(await Client.findByPk(req.valid.body.client_id))) {
+        throw new HttpError(404, 'CLIENT_NOT_FOUND', 'El cliente referenciado no existe');
     }
     await found.update(req.valid.body);
     res.json(found);
