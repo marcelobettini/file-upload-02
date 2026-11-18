@@ -1,0 +1,28 @@
+{
+  "name": "express-multer",
+  "version": "1.0.0",
+  "description": "Tutorial sobre subida de archivos",
+  "homepage": "https://github.com/marcelobettini/express-multer#readme",
+  "bugs": {
+    "url": "https://github.com/marcelobettini/express-multer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcelobettini/express-multer.git"
+  },
+  "license": "MIT",
+  "author": "Marcelo Bettini",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "helmet": "^8.3.0",
+    "multer": "^2.5.0",
+    "mysql2": "^3.24.6",
+    "sequelize": "^6.37.8"
+  }
+}
