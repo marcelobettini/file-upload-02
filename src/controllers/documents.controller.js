@@ -80,3 +80,43 @@ export async function listDocuments(req, res) {
     // Solo metadatos: nunca devolvemos los bytes del archivo.
     res.json(await Document.findAll({ where: { case_id: req.valid.params.id }, order: [['id', 'ASC']] }));
 }
+
+async function findDocumentOr404(id) {
+    const doc = await Document.findByPk(id);
+    if (!doc) throw new HttpError(404, 'DOCUMENT_NOT_FOUND', 'El documento no existe');
+    return doc;
+}
+
+// Descarga: MySQL es la única fuente de verdad. El cliente pide un ID, nunca un
+// nombre de archivo, y jamás se le revela la ruta física de uploads/.
+export async function downloadDocument(req, res, next) {
+    const doc = await findDocumentOr404(req.valid.params.id);
+
+    // res.download(archivo, nombreParaElCliente, opciones, callback)
+    //  - `root` fija la carpeta base: `stored_name` se resuelve siempre dentro de uploads/.
+    //  - el 2.º argumento es el nombre con que el navegador guardará el archivo (el original).
+    //  - el callback se ejecuta si algo falla; si ya se empezó a enviar, no se puede cambiar la respuesta.
+    res.download(doc.stored_name, doc.original_name, { root: UPLOADS_DIR }, (err) => {
+        if (!err || res.headersSent) return;
+        // Hay registro pero no archivo (alguien lo borró a mano): no enviamos datos inexistentes.
+        if (err.code === 'ENOENT') {
+            return next(new HttpError(404, 'FILE_NOT_FOUND', 'El archivo físico no está disponible'));
+        }
+        next(err);
+    });
+}
+
+// Eliminación: primero el archivo, después el registro. El orden es deliberado.
+export async function deleteDocument(req, res) {
+    const doc = await findDocumentOr404(req.valid.params.id);
+
+    // Si unlink falla, el error se propaga y el registro NO se toca: sigue apuntando
+    // a un archivo que existe y el usuario puede reintentar.
+    await fs.unlink(path.join(UPLOADS_DIR, doc.stored_name));
+
+    // Limitación pedagógica: si MySQL falla justo acá, queda un registro huérfano
+    // (apunta a un archivo que ya no existe). No añadimos infraestructura para evitarlo.
+    await doc.destroy();
+
+    res.status(204).end(); // 204 No Content: sin cuerpo
+}

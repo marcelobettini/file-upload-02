@@ -29,3 +29,7 @@ documentsRouter.post(
 );
 
 documentsRouter.get('/cases/:id/documents', validate(idParamSchema, 'params'), ctrl.assertCaseExists, ctrl.listDocuments);
+
+// Estas dos rutas operan sobre un documento por su propio ID (no por expediente).
+documentsRouter.get('/documents/:id/download', validate(idParamSchema, 'params'), ctrl.downloadDocument);
+documentsRouter.delete('/documents/:id', validate(idParamSchema, 'params'), ctrl.deleteDocument);
