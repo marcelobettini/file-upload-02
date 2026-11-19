@@ -14,7 +14,7 @@ export async function assertCaseExists(req, res, next) {
 }
 
 // Acción compensatoria: borra del disco los archivos que Multer ya escribió.
-// Usa allSettled para intentar con TODOS aunque alguno falle, y nunca lanza:
+// Usa allSettled para intentar con TODOS aunque alguno falle, y nunca lanza un error:
 // quien lo llama ya está manejando otro error y no debe perderlo.
 async function removeFiles(files) {
     await Promise.allSettled(files.map((f) => fs.unlink(path.join(UPLOADS_DIR, f.filename))));
@@ -29,9 +29,9 @@ const toRecord = (caseId, file) => ({
     size: file.size,
 });
 
-// Se llega acá solo si Multer terminó bien: el archivo YA está escrito en disco.
+// Se llega acá solo si Multer terminó bien: O sea que el archivo YA está escrito en disco.
 export async function uploadDocument(req, res) {
-    // Si el cliente no envió el campo `document`, Multer no falla: req.file queda undefined.
+    // Si el cliente no envió el campo `document`, Multer no falla: req.file queda undefined. Por eso lo chequeamos nosotros y lanzamos un error 400.
     if (!req.file) {
         throw new HttpError(400, 'FILE_REQUIRED', 'Debe enviar un archivo en el campo "document"');
     }
@@ -56,10 +56,10 @@ export async function uploadDocumentsBatch(req, res) {
     }
 
     try {
-        // Multer limita cada archivo, pero no la suma. La comprobamos acá.
+        // Multer limita cada archivo, pero no la suma de todos. Nosotros la comprobamos acá. No entendés "reduce"? Mirá: https://developer.mozilla.org/es/docs/Web/JavaScript/Referencia/Objetos_globales/Array/reduce
         const total = files.reduce((sum, f) => sum + f.size, 0);
         if (total > MAX_BATCH_SIZE) {
-            throw new HttpError(413, 'BATCH_TOO_LARGE', 'El lote supera el tamaño total máximo permitido (20 MiB)');
+            throw new HttpError(413, 'BATCH_TOO_LARGE', 'El lote supera el tamaño total máximo permitido (20 MB)');
         }
 
         // Una transacción agrupa los INSERT: o se guardan todos o ninguno.

@@ -17,6 +17,8 @@ La especificación completa está en [`project-spec.md`](project-spec.md). Este 
 
 Para ver el código tal como quedó al final de una etapa: `git checkout etapa-1`. Para volver: `git checkout main`.
 
+Para crear la base de datos y las tablas, ejecutá `src/sql/script.sql` en tu servidor MySQL.
+
 ---
 
 ## Puesta en marcha

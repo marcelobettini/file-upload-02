@@ -179,9 +179,9 @@ Prefijo común: `/api`. Las peticiones y respuestas de entidades, salvo subida y
 8. Los archivos se guardan en un único directorio `uploads/`; su relación con el expediente depende de MySQL.
 9. La extensión física se determina según el MIME admitido, no copiando ciegamente la extensión del nombre recibido.
 10. Solo se aceptan los MIME declarados `application/pdf`, `image/jpeg` e `image/png`.
-11. Cada archivo puede tener como máximo **5 MiB** (`5 * 1024 * 1024` bytes).
+11. Cada archivo puede tener como máximo **5 MB** (`5 * 1024 * 1024` bytes).
 12. Cada lote admite como máximo **5 archivos**.
-13. El tamaño total de un lote no puede superar **20 MiB** (`20 * 1024 * 1024` bytes).
+13. El tamaño total de un lote no puede superar **20 MB** (`20 * 1024 * 1024` bytes).
 14. Una subida múltiple es de **todo o nada**: si cualquier validación o inserción falla, no deben quedar registros del lote ni archivos de esa operación.
 15. Se puede descargar un documento por su ID, utilizando el nombre original del archivo.
 16. La eliminación de un documento es definitiva: afecta el archivo físico y el registro de MySQL.
@@ -197,7 +197,7 @@ Prefijo común: `/api`. Las peticiones y respuestas de entidades, salvo subida y
 - `limits.files`: máximo cinco en el endpoint de lote.
 - `single('document')`: procesa una subida individual.
 - `array('documents', 5)`: procesa el lote.
-- Validación adicional posterior a Multer: suma de `req.files[*].size` y rechazo si excede 20 MiB.
+- Validación adicional posterior a Multer: suma de `req.files[*].size` y rechazo si excede 20 MB.
 
 Ejemplo de nombres:
 
@@ -218,8 +218,8 @@ Los archivos no se publican mediante `express.static()`. La aplicación debe cre
 | ID o datos inválidos | `400 Bad Request` | No ejecutar la operación |
 | MIME no permitido | `400 Bad Request` | Rechazar y limpiar archivos del intento |
 | Campo de archivo incorrecto o falta archivo | `400 Bad Request` | Rechazar |
-| Archivo > 5 MiB | `413 Payload Too Large` | Manejar `LIMIT_FILE_SIZE`; limpiar |
-| Lote > 20 MiB | `413 Payload Too Large` | Limpiar archivos ya escritos |
+| Archivo > 5 MB | `413 Payload Too Large` | Manejar `LIMIT_FILE_SIZE`; limpiar |
+| Lote > 20 MB | `413 Payload Too Large` | Limpiar archivos ya escritos |
 | Más de 5 archivos | `400 Bad Request` | Manejar `LIMIT_FILE_COUNT`; limpiar |
 | Cliente, expediente o documento inexistente | `404 Not Found` | No modificar estado |
 | `case_number` o `document_number` duplicado | `409 Conflict` | No modificar estado |
@@ -269,9 +269,9 @@ Si MySQL falla después del `unlink`, podría quedar un registro huérfano: se r
 - [ ] Dos archivos con el mismo nombre original se guardan sin sobrescribirse.
 - [ ] Una subida válida de hasta cinco documentos registra todos los metadatos.
 - [ ] Se rechaza un PDF/JPG/PNG declarado con MIME no permitido.
-- [ ] Se rechaza un archivo que exceda 5 MiB.
+- [ ] Se rechaza un archivo que exceda 5 MB.
 - [ ] Se rechaza un lote de más de cinco archivos.
-- [ ] Se rechaza un lote que exceda 20 MiB aunque ningún archivo individual exceda 5 MiB.
+- [ ] Se rechaza un lote que exceda 20 MB aunque ningún archivo individual exceda 5 MB.
 - [ ] Si falla la subida de un lote, no quedan archivos ni registros creados por ese intento, en condiciones normales de ejecución.
 - [ ] Se pueden listar los documentos asociados a un expediente.
 - [ ] Se puede descargar un documento conservando su nombre original.
@@ -290,7 +290,7 @@ Si MySQL falla después del `unlink`, podría quedar un registro huérfano: se r
 ## 11. Convenciones y límites conscientes
 
 - El término «expediente» es una representación educativa simplificada; no refleja toda la complejidad procesal.
-- Los tamaños de 5 y 20 MB se entienden en la implementación como MiB (potencias de 1024), siguiendo las expresiones acordadas.
+- Los tamaños de 5 y 20 MB se entienden en la implementación como MB (potencias de 1024), siguiendo las expresiones acordadas.
 - No se especifican paginación, filtros avanzados ni ordenamientos especiales: quedan fuera del alcance.
 - El formato exacto de los JSON de éxito puede definirse durante la implementación, manteniendo consistencia entre endpoints.
 - No utilizar documentación ni archivos judiciales reales en las pruebas.
