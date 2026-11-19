@@ -29,7 +29,8 @@ export const MAX_BATCH_SIZE = 20 * 1024 * 1024; // 20 MB sumando todo el lote
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, UPLOADS_DIR),
     // El nombre lo genera el servidor: así dos archivos con el mismo nombre original
-    // no se pisan y un nombre malicioso (../../x) nunca llega al sistema de archivos.
+    // no se pisan y un nombre malicioso como ../../x nunca llega al sistema de archivos. Sin esta medida, un nombre como  ../../x haría que Multer escriba dos niveles por encima de la carpeta uploads/ y sobreescriba cualquier archivo del servidor. Si querés profundizar, buscá "directory traversal" o "ataque de path traversal" en seguridad web.
+
     filename: (req, file, cb) => cb(null, `${randomUUID()}${ALLOWED_TYPES[file.mimetype]}`),
 });
 
