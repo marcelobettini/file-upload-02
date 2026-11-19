@@ -1,4 +1,4 @@
-// Configuración de Multer. Es el corazón del tutorial: leela con calma.
+// Configuración de Multer. Es el corazón del tutorial: leé esta parte con tranquilidad y no sigas si no entendés algo.
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -10,20 +10,20 @@ import { HttpError } from '../utils/HttpError.js';
 export const UPLOADS_DIR = path.resolve('uploads');
 
 // Multer no crea la carpeta cuando `destination` es una función, así que la
-// creamos nosotros al cargar el módulo. `recursive` evita error si ya existe.
+// creamos nosotros al cargar el módulo. `recursive` evita que nos tire error si la carpeta ya existe.
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-// Fuente de verdad de los tipos permitidos: MIME declarado -> extensión física.
-// La extensión sale de ACÁ, nunca del nombre que mandó el cliente.
+// Fuente de verdad de los tipos de archivo permitidos: MIME declarado -> extensión física.
+// La extensión sale de ACÁ, nunca del nombre que mandó el cliente. No entendés que es MIME? Leé https://developer.mozilla.org/es/docs/Web/HTTP/Guides/MIME_types.
 export const ALLOWED_TYPES = {
     'application/pdf': '.pdf',
     'image/jpeg': '.jpg',
     'image/png': '.png',
 };
 
-export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MiB por archivo
+export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB por archivo
 export const MAX_BATCH_FILES = 5; // archivos por lote
-export const MAX_BATCH_SIZE = 20 * 1024 * 1024; // 20 MiB sumando todo el lote
+export const MAX_BATCH_SIZE = 20 * 1024 * 1024; // 20 MB sumando todo el lote
 
 // diskStorage decide DÓNDE y con QUÉ NOMBRE se escribe cada archivo.
 const storage = multer.diskStorage({
@@ -35,7 +35,8 @@ const storage = multer.diskStorage({
 
 // fileFilter corre ANTES de escribir en disco. cb(null, true) acepta; un error rechaza.
 // ADVERTENCIA: file.mimetype lo declara el cliente y puede falsificarse. Para este
-// ejercicio local alcanza; una app real debería inspeccionar el contenido del archivo.
+// ejercicio local alcanza; una app real debería inspeccionar el contenido del archivo para que no te manden un .jpg que en realidad es un .exe. PAra verificar el contenido, podés usar la librería `file-type` (https://www.npmjs.com/package/file-type).
+// Si no entendés Object.hasOwn, leé https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwn.
 function fileFilter(req, file, cb) {
     if (Object.hasOwn(ALLOWED_TYPES, file.mimetype)) return cb(null, true);
     cb(new HttpError(400, 'INVALID_FILE_TYPE', 'Tipo de archivo no permitido. Se aceptan PDF, JPG y PNG'));
